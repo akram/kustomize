@@ -11,8 +11,9 @@ import (
 	"log"
 	"reflect"
 	"regexp"
-	"strings"
 
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"sigs.k8s.io/kustomize/api/konfig"
 	"sigs.k8s.io/kustomize/api/types"
 	"sigs.k8s.io/kustomize/kyaml/filesys"
@@ -39,6 +40,7 @@ func determineFieldOrder() []string {
 
 	ordered := []string{
 		"MetaData",
+		"SortOptions",
 		"Resources",
 		"Bases",
 		"NamePrefix",
@@ -64,7 +66,7 @@ func determineFieldOrder() []string {
 		"Configurations",
 		"Generators",
 		"Transformers",
-		"Inventory",
+		"Validators",
 		"Components",
 		"OpenAPI",
 		"BuildMetadata",
@@ -116,7 +118,7 @@ type kustomizationFile struct {
 }
 
 // NewKustomizationFile returns a new instance.
-func NewKustomizationFile(fSys filesys.FileSystem) (*kustomizationFile, error) { // nolint
+func NewKustomizationFile(fSys filesys.FileSystem) (*kustomizationFile, error) {
 	mf := &kustomizationFile{fSys: fSys}
 	err := mf.validate()
 	if err != nil {
@@ -164,21 +166,18 @@ func (mf *kustomizationFile) Read() (*types.Kustomization, error) {
 	if err != nil {
 		return nil, err
 	}
-	data, err = types.FixKustomizationPreUnmarshalling(data)
-	if err != nil {
-		return nil, err
-	}
+
 	var k types.Kustomization
-	err = k.Unmarshal(data)
-	if err != nil {
+	if err := k.Unmarshal(data); err != nil {
 		return nil, err
 	}
-	k.FixKustomizationPostUnmarshalling()
-	err = mf.parseCommentedFields(data)
-	if err != nil {
+
+	k.FixKustomization()
+
+	if err := mf.parseCommentedFields(data); err != nil {
 		return nil, err
 	}
-	return &k, err
+	return &k, nil
 }
 
 func (mf *kustomizationFile) Write(kustomization *types.Kustomization) error {
@@ -190,16 +189,6 @@ func (mf *kustomizationFile) Write(kustomization *types.Kustomization) error {
 		return err
 	}
 	return mf.fSys.WriteFile(mf.path, data)
-}
-
-// StringInSlice returns true if the string is in the slice.
-func StringInSlice(str string, list []string) bool {
-	for _, v := range list {
-		if v == str {
-			return true
-		}
-	}
-	return false
 }
 
 func (mf *kustomizationFile) parseCommentedFields(content []byte) error {
@@ -263,12 +252,13 @@ func (mf *kustomizationFile) hasField(name string) bool {
 }
 
 /*
- isCommentOrBlankLine determines if a line is a comment or blank line
- Return true for following lines
- # This line is a comment
-       # This line is also a comment with several leading white spaces
+isCommentOrBlankLine determines if a line is a comment or blank line
+Return true for following lines
+# This line is a comment
 
- (The line above is a blank line)
+	# This line is also a comment with several leading white spaces
+
+(The line above is a blank line)
 */
 func isCommentOrBlankLine(line []byte) bool {
 	s := bytes.TrimRight(bytes.TrimLeft(line, " "), "\n")
@@ -291,7 +281,8 @@ func findMatchedField(line []byte) (bool, string) {
 // an empty []byte is returned.
 func marshalField(field string, kustomization *types.Kustomization) ([]byte, error) {
 	r := reflect.ValueOf(*kustomization)
-	v := r.FieldByName(strings.Title(field))
+	titleCaser := cases.Title(language.English, cases.NoLower)
+	v := r.FieldByName(titleCaser.String(field))
 
 	if !v.IsValid() || isEmpty(v) {
 		return []byte{}, nil
@@ -299,7 +290,7 @@ func marshalField(field string, kustomization *types.Kustomization) ([]byte, err
 
 	k := &types.Kustomization{}
 	kr := reflect.ValueOf(k)
-	kv := kr.Elem().FieldByName(strings.Title(field))
+	kv := kr.Elem().FieldByName(titleCaser.String(field))
 	kv.Set(v)
 
 	return yaml.Marshal(k)

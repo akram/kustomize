@@ -1,9 +1,12 @@
 #! /bin/bash
+# Copyright 2022 The Kubernetes Authors.
+# SPDX-License-Identifier: Apache-2.0
+
 
 set -e
 
 KUSTOMIZE_EXEC=kustomize
-KUSTOMIZE_FLAGS="build --enable_alpha_plugins --enable-exec"
+KUSTOMIZE_FLAGS="build --enable-exec --enable-alpha-plugins"
 
 function build_label_namespace_exec {
     cd label_namespace/execfn

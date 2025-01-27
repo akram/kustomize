@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/kustomize/kyaml/kio"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
 )
@@ -663,7 +664,7 @@ func TestByteReadWriter_WrapBareSeqNode(t *testing.T) {
 - foo
 - bar
 `,
-			readerErr: "wrong Node Kind for  expected: MappingNode was SequenceNode",
+			readerErr: "wrong node kind: expected MappingNode but got SequenceNode",
 		},
 		{
 			name:            "error round_trip bare seq node",
@@ -686,7 +687,7 @@ func TestByteReadWriter_WrapBareSeqNode(t *testing.T) {
       served: true
       storage: false
 `,
-			readerErr: "wrong Node Kind for  expected: MappingNode was SequenceNode",
+			readerErr: "wrong node kind: expected MappingNode but got SequenceNode",
 		},
 		{
 			name:            "round_trip bare seq node json",
@@ -698,7 +699,7 @@ func TestByteReadWriter_WrapBareSeqNode(t *testing.T) {
 			name:            "error round_trip invalid yaml node",
 			wrapBareSeqNode: false,
 			input:           "I am not valid",
-			readerErr:       "wrong Node Kind for  expected: MappingNode was ScalarNode",
+			readerErr:       "wrong node kind: expected MappingNode but got ScalarNode",
 		},
 	}
 
@@ -857,10 +858,10 @@ results:
 			}
 
 			rnodes, err := rw.Read()
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			err = rw.Write(rnodes)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			assert.Equal(t, tc.want, strings.TrimSpace(got.String()))
 		})

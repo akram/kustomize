@@ -1,3 +1,6 @@
+// Copyright 2022 The Kubernetes Authors.
+// SPDX-License-Identifier: Apache-2.0
+
 package krusty_test
 
 import (
@@ -214,8 +217,6 @@ fieldSpecs:
 `)
 
 	th.WriteK(".", `
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
 resources:
 - workloads.yaml
 transformers:

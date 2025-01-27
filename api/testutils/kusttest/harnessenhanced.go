@@ -4,7 +4,6 @@
 package kusttest_test
 
 import (
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -12,9 +11,9 @@ import (
 	"testing"
 
 	"sigs.k8s.io/kustomize/api/ifc"
+	fLdr "sigs.k8s.io/kustomize/api/internal/loader"
 	pLdr "sigs.k8s.io/kustomize/api/internal/plugins/loader"
 	"sigs.k8s.io/kustomize/api/konfig"
-	fLdr "sigs.k8s.io/kustomize/api/loader"
 	"sigs.k8s.io/kustomize/api/provider"
 	"sigs.k8s.io/kustomize/api/resmap"
 	valtest_test "sigs.k8s.io/kustomize/api/testutils/valtest"
@@ -47,6 +46,7 @@ type HarnessEnhanced struct {
 }
 
 func MakeEnhancedHarness(t *testing.T) *HarnessEnhanced {
+	t.Helper()
 	r := makeBaseEnhancedHarness(t)
 	r.Harness = MakeHarnessWithFs(t, filesys.MakeFsInMemory())
 	// Point the Harness's file loader to the root ('/')
@@ -56,10 +56,11 @@ func MakeEnhancedHarness(t *testing.T) *HarnessEnhanced {
 }
 
 func MakeEnhancedHarnessWithTmpRoot(t *testing.T) *HarnessEnhanced {
+	t.Helper()
 	r := makeBaseEnhancedHarness(t)
 	fSys := filesys.MakeFsOnDisk()
 	r.Harness = MakeHarnessWithFs(t, fSys)
-	tmpDir, err := ioutil.TempDir("", "kust-testing-")
+	tmpDir, err := os.MkdirTemp("", "kust-testing-")
 	if err != nil {
 		panic("test harness cannot make tmp dir: " + err.Error())
 	}
@@ -72,6 +73,7 @@ func MakeEnhancedHarnessWithTmpRoot(t *testing.T) *HarnessEnhanced {
 }
 
 func makeBaseEnhancedHarness(t *testing.T) *HarnessEnhanced {
+	t.Helper()
 	rf := resmap.NewFactory(
 		provider.NewDefaultDepProvider().GetResourceFactory())
 	return &HarnessEnhanced{

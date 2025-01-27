@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"sigs.k8s.io/kustomize/api/internal/konfig/builtinpluginconsts"
 	"sigs.k8s.io/kustomize/api/konfig"
-	"sigs.k8s.io/kustomize/api/konfig/builtinpluginconsts"
 	"sigs.k8s.io/kustomize/api/krusty"
 	"sigs.k8s.io/kustomize/api/resmap"
 	"sigs.k8s.io/kustomize/api/types"
@@ -22,11 +22,13 @@ type Harness struct {
 }
 
 func MakeHarness(t *testing.T) Harness {
+	t.Helper()
 	return MakeHarnessWithFs(t, filesys.MakeFsInMemory())
 }
 
 func MakeHarnessWithFs(
 	t *testing.T, fSys filesys.FileSystem) Harness {
+	t.Helper()
 	return Harness{
 		t:    t,
 		fSys: fSys,

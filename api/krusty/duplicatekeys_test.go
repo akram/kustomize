@@ -1,9 +1,13 @@
+// Copyright 2022 The Kubernetes Authors.
+// SPDX-License-Identifier: Apache-2.0
+
 package krusty_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	kusttest_test "sigs.k8s.io/kustomize/api/testutils/kusttest"
 )
 
@@ -38,6 +42,6 @@ spec:
 `)
 	m := th.Run(".", th.MakeDefaultOptions())
 	_, err := m.AsYaml()
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "mapping key \"env\" already defined")
 }

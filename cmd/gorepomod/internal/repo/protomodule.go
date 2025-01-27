@@ -1,12 +1,16 @@
+// Copyright 2022 The Kubernetes Authors.
+// SPDX-License-Identifier: Apache-2.0
+
 package repo
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
+	v "github.com/spf13/viper"
 	"golang.org/x/mod/modfile"
 	"sigs.k8s.io/kustomize/cmd/gorepomod/internal/misc"
 	"sigs.k8s.io/kustomize/cmd/gorepomod/internal/utils"
@@ -26,6 +30,13 @@ func (pm *protoModule) FullPath() string {
 	return pm.mf.Module.Mod.Path
 }
 
+func (pm *protoModule) FullLocalPath() string {
+	var localPrefix string = v.GetString("LocalGitPrefix")
+	var pathToModule string = pm.mf.Module.Mod.Path
+	pathSlice := strings.Split(pathToModule, "/")
+	return localPrefix + "/" + strings.Join(pathSlice[1:], "/")
+}
+
 func (pm *protoModule) PathToGoMod() string {
 	return pm.pathToGoMod
 }
@@ -43,6 +54,19 @@ func (pm *protoModule) ShortName(
 	p := fp[len(repoImportPath)+1:]
 	stripped := trailingVersionPattern.ReplaceAllString(p, "")
 	return misc.ModuleShortName(stripped)
+}
+
+func (pm *protoModule) ShortNameWithLocalFlag(
+	repoImportPath string) misc.ModuleShortName {
+	fp := pm.FullLocalPath()
+
+	if fp == repoImportPath {
+		return misc.ModuleAtTop
+	}
+	p := fp[len(repoImportPath)+2:]
+	stripped := trailingVersionPattern.ReplaceAllString(p, "")
+	pathSlice := strings.Split(stripped, "/")
+	return misc.ModuleShortName(strings.Join(pathSlice[3:], "/"))
 }
 
 func loadProtoModules(
@@ -65,7 +89,7 @@ func loadProtoModules(
 
 func loadProtoModule(path string) (*protoModule, error) {
 	mPath := filepath.Join(path, goModFile)
-	content, err := ioutil.ReadFile(mPath)
+	content, err := os.ReadFile(mPath)
 	if err != nil {
 		return nil, fmt.Errorf("error reading %q: %v\n", mPath, err)
 	}

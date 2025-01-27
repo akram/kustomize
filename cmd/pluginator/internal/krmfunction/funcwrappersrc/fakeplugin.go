@@ -1,4 +1,6 @@
-//nolint
+// Copyright 2022 The Kubernetes Authors.
+// SPDX-License-Identifier: Apache-2.0
+
 package funcwrappersrc
 
 import (
@@ -7,8 +9,7 @@ import (
 
 type plugin struct{}
 
-//noinspection GoUnusedGlobalVariable
-var KustomizePlugin plugin
+var KustomizePlugin plugin //nolint:gochecknoglobals
 
 func (p *plugin) Config(
 	_ *resmap.PluginHelpers, _ []byte) (err error) {

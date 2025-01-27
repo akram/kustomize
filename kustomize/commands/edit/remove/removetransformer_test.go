@@ -1,17 +1,20 @@
+// Copyright 2022 The Kubernetes Authors.
+// SPDX-License-Identifier: Apache-2.0
+
 package remove
 
 import (
 	"testing"
 
-	"github.com/pkg/errors"
-	"sigs.k8s.io/kustomize/kustomize/v4/commands/edit/remove_test"
+	testutils_test "sigs.k8s.io/kustomize/kustomize/v5/commands/internal/testutils"
+	"sigs.k8s.io/kustomize/kyaml/errors"
 )
 
 func TestRemoveTransformer(t *testing.T) {
-	testCases := []remove_test.Case{
+	testCases := []testutils_test.RemoveTestCase{
 		{
 			Description: "remove transformers",
-			Given: remove_test.Given{
+			Given: testutils_test.RemoveTestGivenValues{
 				Items: []string{
 					"transformer1.yaml",
 					"transformer2.yaml",
@@ -19,7 +22,7 @@ func TestRemoveTransformer(t *testing.T) {
 				},
 				RemoveArgs: []string{"transformer1.yaml"},
 			},
-			Expected: remove_test.Expected{
+			Expected: testutils_test.RemoveTestExpectedValues{
 				Items: []string{
 					"transformer2.yaml",
 					"transformer3.yaml",
@@ -31,7 +34,7 @@ func TestRemoveTransformer(t *testing.T) {
 		},
 		{
 			Description: "remove transformer with pattern",
-			Given: remove_test.Given{
+			Given: testutils_test.RemoveTestGivenValues{
 				Items: []string{
 					"foo/transformer1.yaml",
 					"foo/transformer2.yaml",
@@ -40,7 +43,7 @@ func TestRemoveTransformer(t *testing.T) {
 				},
 				RemoveArgs: []string{"foo/transformer*.yaml"},
 			},
-			Expected: remove_test.Expected{
+			Expected: testutils_test.RemoveTestExpectedValues{
 				Items: []string{
 					"do/not/deleteme/please.yaml",
 				},
@@ -53,7 +56,7 @@ func TestRemoveTransformer(t *testing.T) {
 		},
 		{
 			Description: "nothing found to remove",
-			Given: remove_test.Given{
+			Given: testutils_test.RemoveTestGivenValues{
 				Items: []string{
 					"transformer1.yaml",
 					"transformer2.yaml",
@@ -61,7 +64,7 @@ func TestRemoveTransformer(t *testing.T) {
 				},
 				RemoveArgs: []string{"foo"},
 			},
-			Expected: remove_test.Expected{
+			Expected: testutils_test.RemoveTestExpectedValues{
 				Items: []string{
 					"transformer2.yaml",
 					"transformer3.yaml",
@@ -71,14 +74,14 @@ func TestRemoveTransformer(t *testing.T) {
 		},
 		{
 			Description: "no arguments",
-			Given:       remove_test.Given{},
-			Expected: remove_test.Expected{
-				Err: errors.New("must specify a transformer file"),
+			Given:       testutils_test.RemoveTestGivenValues{},
+			Expected: testutils_test.RemoveTestExpectedValues{
+				Err: errors.Errorf("must specify a transformer file"),
 			},
 		},
 		{
 			Description: "remove with multiple pattern arguments",
-			Given: remove_test.Given{
+			Given: testutils_test.RemoveTestGivenValues{
 				Items: []string{
 					"foo/foo.yaml",
 					"bar/bar.yaml",
@@ -91,7 +94,7 @@ func TestRemoveTransformer(t *testing.T) {
 					"tra*.yaml",
 				},
 			},
-			Expected: remove_test.Expected{
+			Expected: testutils_test.RemoveTestExpectedValues{
 				Items: []string{
 					"do/not/deleteme/please.yaml",
 				},
@@ -104,5 +107,5 @@ func TestRemoveTransformer(t *testing.T) {
 		},
 	}
 
-	remove_test.ExecuteTestCases(t, testCases, "transformers", newCmdRemoveTransformer)
+	testutils_test.ExecuteRemoveTestCases(t, testCases, "transformers", newCmdRemoveTransformer)
 }

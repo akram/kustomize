@@ -6,11 +6,12 @@ package add
 import (
 	"errors"
 	"log"
+	"slices"
 
 	"github.com/spf13/cobra"
-	"sigs.k8s.io/kustomize/api/loader"
-	"sigs.k8s.io/kustomize/kustomize/v4/commands/internal/kustfile"
-	"sigs.k8s.io/kustomize/kustomize/v4/commands/internal/util"
+	"sigs.k8s.io/kustomize/api/pkg/loader"
+	"sigs.k8s.io/kustomize/kustomize/v5/commands/internal/kustfile"
+	"sigs.k8s.io/kustomize/kustomize/v5/commands/internal/util"
 	"sigs.k8s.io/kustomize/kyaml/filesys"
 )
 
@@ -24,7 +25,7 @@ func newCmdAddComponent(fSys filesys.FileSystem) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "component",
-		Short: "Add the name of a file containing a component to the kustomization file.",
+		Short: "Add the name of a file containing a component to the kustomization file",
 		Example: `
 		add component {filepath}`,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -49,7 +50,7 @@ func (o *addComponentOptions) Validate(args []string) error {
 
 // RunAddComponent runs addComponent command (do real work).
 func (o *addComponentOptions) RunAddComponent(fSys filesys.FileSystem) error {
-	components, err := util.GlobPatternsWithLoader(fSys, loader.NewFileLoaderAtCwd(fSys), o.componentFilePaths)
+	components, err := util.GlobPatternsWithLoader(fSys, loader.NewFileLoaderAtCwd(fSys), o.componentFilePaths, false)
 	if err != nil {
 		return err
 	}
@@ -69,7 +70,7 @@ func (o *addComponentOptions) RunAddComponent(fSys filesys.FileSystem) error {
 
 	for _, component := range components {
 		if mf.GetPath() != component {
-			if kustfile.StringInSlice(component, m.Components) {
+			if slices.Contains(m.Components, component) {
 				log.Printf("component %s already in kustomization file", component)
 				continue
 			}

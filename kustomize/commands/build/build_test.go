@@ -11,7 +11,7 @@ import (
 
 	"sigs.k8s.io/kustomize/api/konfig"
 	"sigs.k8s.io/kustomize/api/provenance"
-	. "sigs.k8s.io/kustomize/kustomize/v4/commands/build"
+	. "sigs.k8s.io/kustomize/kustomize/v5/commands/build"
 	"sigs.k8s.io/kustomize/kyaml/filesys"
 )
 
@@ -204,7 +204,7 @@ func TestHelp(t *testing.T) {
 	if cmd.Use != "bar DIR" {
 		t.Fatalf("Unexpected usage: %s\n", cmd.Use)
 	}
-	if cmd.Short != "Build a kustomization target from a directory or URL." {
+	if cmd.Short != "Build a kustomization target from a directory or URL" {
 		t.Fatalf("Unexpected short help: %s\n", cmd.Short)
 	}
 	if !strings.Contains(cmd.Long, "If DIR is omitted, '.' is assumed.") {
@@ -243,10 +243,8 @@ func TestValidation(t *testing.T) {
 					t.Errorf("%s: Expected error %s, but got %v",
 						n, tc.erMsg, err)
 				}
-			} else {
-				if err != nil {
-					t.Errorf("%s: unknown error: %v", n, err)
-				}
+			} else if err != nil {
+				t.Errorf("%s: unknown error: %v", n, err)
 			}
 		})
 	}

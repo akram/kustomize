@@ -1,6 +1,12 @@
+// Copyright 2022 The Kubernetes Authors.
+// SPDX-License-Identifier: Apache-2.0
+
 package repo
 
-import "testing"
+import (
+	"testing"
+)
 
-func TestLoadTags(t *testing.T) {
+func TestLoadRepoManager(t *testing.T) {
+	t.Skip()
 }

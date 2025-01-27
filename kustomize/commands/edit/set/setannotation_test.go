@@ -8,8 +8,8 @@ import (
 
 	valtest_test "sigs.k8s.io/kustomize/api/testutils/valtest"
 	"sigs.k8s.io/kustomize/api/types"
-	"sigs.k8s.io/kustomize/kustomize/v4/commands/internal/kustfile"
-	testutils_test "sigs.k8s.io/kustomize/kustomize/v4/commands/internal/testutils"
+	"sigs.k8s.io/kustomize/kustomize/v5/commands/internal/kustfile"
+	testutils_test "sigs.k8s.io/kustomize/kustomize/v5/commands/internal/testutils"
 	"sigs.k8s.io/kustomize/kyaml/filesys"
 )
 
@@ -17,6 +17,7 @@ const invalidAnnotationKey string = "invalid annotation key: see the syntax and 
 	"https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/"
 
 func makeAnnotationKustomization(t *testing.T) *types.Kustomization {
+	t.Helper()
 	fSys := filesys.MakeFsInMemory()
 	testutils_test.WriteTestKustomization(fSys)
 	kf, err := kustfile.NewKustomizationFile(fSys)

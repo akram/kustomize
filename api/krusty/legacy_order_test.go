@@ -1,8 +1,12 @@
+// Copyright 2022 The Kubernetes Authors.
+// SPDX-License-Identifier: Apache-2.0
+
 package krusty_test
 
 import (
 	"testing"
 
+	"sigs.k8s.io/kustomize/api/krusty"
 	kusttest_test "sigs.k8s.io/kustomize/api/testutils/kusttest"
 )
 
@@ -35,7 +39,7 @@ data:
   key: value
 `)
 	opts := th.MakeDefaultOptions()
-	opts.DoLegacyResourceSort = true
+	opts.Reorder = krusty.ReorderOptionLegacy
 	m := th.Run(".", opts)
 	th.AssertActualEqualsExpected(m, `
 apiVersion: v1

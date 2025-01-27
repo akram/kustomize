@@ -1,11 +1,13 @@
 #! /usr/bin/env bash
+# Copyright 2022 The Kubernetes Authors.
+# SPDX-License-Identifier: Apache-2.0
+
 
 builtinPlugins=(AnnotationsTransformer \
 	ConfigMapGenerator \
 	HashTransformer \
 	ImageTagTransformer \
 	LabelTransformer \
-	LegacyOrderTransformer \
 	NamespaceTransformer \
 	PatchJson6902Transformer \
 	PatchStrategicMergeTransformer \

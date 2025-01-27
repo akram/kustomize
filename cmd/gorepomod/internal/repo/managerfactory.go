@@ -1,3 +1,6 @@
+// Copyright 2022 The Kubernetes Authors.
+// SPDX-License-Identifier: Apache-2.0
+
 package repo
 
 import (
@@ -23,6 +26,26 @@ func (mf *ManagerFactory) NewRepoManager(allowedReplacements []string) *Manager 
 	var modules misc.LesModules
 	for _, pm := range mf.modules {
 		shortName := pm.ShortName(mf.dg.RepoPath())
+		modules = append(
+			modules,
+			mod.New(
+				result, shortName, pm.mf,
+				mf.versionMapLocal.Latest(shortName),
+				mf.versionMapRemote.Latest(shortName)))
+	}
+	result.modules = modules
+	result.allowedReplacements = allowedReplacements
+	return result
+}
+
+func (mf *ManagerFactory) NewRepoManagerWithLocalFlag(allowedReplacements []string) *Manager {
+	result := &Manager{
+		dg:         mf.dg,
+		remoteName: mf.remoteName,
+	}
+	var modules misc.LesModules
+	for _, pm := range mf.modules {
+		shortName := pm.ShortNameWithLocalFlag(mf.dg.RepoPath())
 		modules = append(
 			modules,
 			mod.New(
