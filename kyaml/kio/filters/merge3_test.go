@@ -4,17 +4,15 @@
 package filters_test
 
 import (
-	"io/ioutil"
-	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
 
-	"sigs.k8s.io/kustomize/kyaml/testutil"
-
 	"github.com/stretchr/testify/assert"
 	"sigs.k8s.io/kustomize/kyaml/copyutil"
+	"sigs.k8s.io/kustomize/kyaml/filesys"
 	"sigs.k8s.io/kustomize/kyaml/kio/filters"
+	"sigs.k8s.io/kustomize/kyaml/testutil"
 )
 
 func TestMerge3_Merge(t *testing.T) {
@@ -28,19 +26,16 @@ func TestMerge3_Merge(t *testing.T) {
 	datadir = filepath.Join(filepath.Dir(datadir), "testdata")
 
 	// setup the local directory
-	dir, err := ioutil.TempDir("", "kyaml-test")
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
-	defer os.RemoveAll(dir)
+	dir := t.TempDir()
 
 	if !assert.NoError(t, copyutil.CopyDir(
+		filesys.MakeFsOnDisk(),
 		filepath.Join(datadir, "dataset1-localupdates"),
 		filepath.Join(dir, "dataset1"))) {
 		t.FailNow()
 	}
 
-	err = filters.Merge3{
+	err := filters.Merge3{
 		OriginalPath: filepath.Join(datadir, "dataset1"),
 		UpdatedPath:  filepath.Join(datadir, "dataset1-remoteupdates"),
 		DestPath:     filepath.Join(dir, "dataset1"),
@@ -74,19 +69,16 @@ func TestMerge3_Merge_path(t *testing.T) {
 	datadir = filepath.Join(filepath.Dir(datadir), "testdata2")
 
 	// setup the local directory
-	dir, err := ioutil.TempDir("", "kyaml-test")
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
-	defer os.RemoveAll(dir)
+	dir := t.TempDir()
 
 	if !assert.NoError(t, copyutil.CopyDir(
+		filesys.MakeFsOnDisk(),
 		filepath.Join(datadir, "dataset1-localupdates"),
 		filepath.Join(dir, "dataset1"))) {
 		t.FailNow()
 	}
 
-	err = filters.Merge3{
+	err := filters.Merge3{
 		OriginalPath: filepath.Join(datadir, "dataset1"),
 		UpdatedPath:  filepath.Join(datadir, "dataset1-remoteupdates"),
 		DestPath:     filepath.Join(dir, "dataset1"),
@@ -119,19 +111,16 @@ func TestMerge3_Merge_fail(t *testing.T) {
 	datadir = filepath.Join(filepath.Dir(datadir), "testdata2")
 
 	// setup the local directory
-	dir, err := ioutil.TempDir("", "kyaml-test")
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
-	defer os.RemoveAll(dir)
+	dir := t.TempDir()
 
 	if !assert.NoError(t, copyutil.CopyDir(
+		filesys.MakeFsOnDisk(),
 		filepath.Join(datadir, "dataset1-localupdates"),
 		filepath.Join(dir, "dataset1"))) {
 		t.FailNow()
 	}
 
-	err = filters.Merge3{
+	err := filters.Merge3{
 		OriginalPath: filepath.Join(datadir, "dataset1"),
 		UpdatedPath:  filepath.Join(datadir, "dataset1-remoteupdates"),
 		DestPath:     filepath.Join(dir, "dataset1"),

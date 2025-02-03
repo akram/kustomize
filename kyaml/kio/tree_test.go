@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	. "sigs.k8s.io/kustomize/kyaml/kio"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
 )
@@ -70,7 +71,7 @@ spec:
 
 	if !assert.Equal(t, `
 ├── bar-package
-│   └── [f2.yaml]  Deployment bar
+│   └── [f2.yaml]  Deployment bar
 └── foo-package
     ├── [f1.yaml]  Deployment default/foo
     ├── [f1.yaml]  Service default/foo
@@ -143,7 +144,7 @@ spec:
 ├── [f1.yaml]  Service default/foo
 ├── [f3.yaml]  Deployment default/foo
 ├── bar-package
-│   └── [f2.yaml]  Deployment bar
+│   └── [f2.yaml]  Deployment bar
 └── foo-package
     └── [f1.yaml]  Deployment default/foo
 `, out.String()) {
@@ -574,6 +575,6 @@ metadata:
 		Inputs:  []Reader{&ByteReader{Reader: bytes.NewBufferString(in)}},
 		Outputs: []Writer{TreeWriter{Writer: out}},
 	}.Execute()
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, "owner 'Application myapp-staging/nginx' not found in input, but found as an owner of input objects", err.Error())
 }

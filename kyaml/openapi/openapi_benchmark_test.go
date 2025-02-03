@@ -5,60 +5,25 @@ package openapi
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
-	openapi_v2 "github.com/google/gnostic/openapiv2"
-	"k8s.io/kube-openapi/pkg/validation/spec"
+	openapi_v2 "github.com/google/gnostic-models/openapiv2"
+	"google.golang.org/protobuf/proto"
 	"sigs.k8s.io/kustomize/kyaml/openapi/kubernetesapi"
-	"sigs.k8s.io/kustomize/kyaml/openapi/kubernetesapi/v1218pb"
+	"sigs.k8s.io/kustomize/kyaml/yaml"
 )
 
-// Benchmark for swagger parsing (UnmarshalJSON)
-func BenchmarkSwaggerUnmarshalJSON(t *testing.B) {
+func BenchmarkProtoUnmarshal(t *testing.B) {
 	version := kubernetesOpenAPIDefaultVersion
 
 	// parse the swagger, this should never fail
 	assetName := filepath.Join(
 		"kubernetesapi",
-		version,
-		"swagger.json")
-
-	b := kubernetesapi.OpenAPIMustAsset[version](assetName)
-
-	for i := 0; i < t.N; i++ {
-		var swagger spec.Swagger
-		if err := swagger.UnmarshalJSON(b); err != nil {
-			t.Fatalf("swagger.UnmarshalJSON failed: %v", err)
-		}
-	}
-}
-
-func BenchmarkOpenAPIV2ParseDocument(t *testing.B) {
-	version := kubernetesOpenAPIDefaultVersion
-
-	assetName := filepath.Join(
-		"kubernetesapi",
-		version,
-		"swagger.json")
-
-	b := kubernetesapi.OpenAPIMustAsset[version](assetName)
-
-	for i := 0; i < t.N; i++ {
-		// We parse JSON and get an openapiv2.Document here.
-		if _, err := openapi_v2.ParseDocument(b); err != nil {
-			t.Fatalf("openapi_v2.ParseDocument failed: %v", err)
-		}
-	}
-}
-
-func BenchmarkProtoUnmarshal(t *testing.B) {
-	assetName := filepath.Join(
-		"kubernetesapi",
-		"v1218pb",
+		strings.ReplaceAll(version, ".", "_"),
 		"swagger.pb")
 
-	b := v1218pb.MustAsset(assetName)
+	b := kubernetesapi.OpenAPIMustAsset[version](assetName)
 
 	for i := 0; i < t.N; i++ {
 		// We parse protobuf and get an openapiv2.Document here.
@@ -68,17 +33,18 @@ func BenchmarkProtoUnmarshal(t *testing.B) {
 	}
 }
 
-// Benchmark for loading assets packed into the binary
-func BenchmarkAssetRead(t *testing.B) {
-	for i := 0; i < t.N; i++ {
-		version := kubernetesOpenAPIDefaultVersion
-
-		// parse the swagger, this should never fail
-		assetName := filepath.Join(
-			"kubernetesapi",
-			version,
-			"swagger.json")
-
-		kubernetesapi.OpenAPIMustAsset[version](assetName)
+func BenchmarkPrecomputedIsNamespaceScoped(b *testing.B) {
+	testcases := map[string]yaml.TypeMeta{
+		"namespace scoped": {APIVersion: "apps/v1", Kind: "ControllerRevision"},
+		"cluster scoped":   {APIVersion: "rbac.authorization.k8s.io/v1", Kind: "ClusterRole"},
+		"unknown resource": {APIVersion: "custom.io/v1", Kind: "Custom"},
+	}
+	for name, testcase := range testcases {
+		b.Run(name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				ResetOpenAPI()
+				_, _ = IsNamespaceScoped(testcase)
+			}
+		})
 	}
 }

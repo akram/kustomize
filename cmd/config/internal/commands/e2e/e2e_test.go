@@ -6,7 +6,6 @@ package e2e
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -35,7 +34,7 @@ func TestRunE2e(t *testing.T) {
 			name: "exec_function_no_args",
 			args: func(d string) []string {
 				return []string{
-					"--enable-exec", "--exec-path", filepath.Join(d, "e2econtainerconfig"),
+					"--enable-exec", "--exec-path", filepath.Join(d, e2eConfigDir),
 				}
 			},
 			files: func(d string) map[string]string {
@@ -498,204 +497,6 @@ metadata:
 				}
 			},
 		},
-
-		{
-			name: "starlark_function_config",
-			args: func(d string) []string { return []string{"--enable-star"} },
-			files: func(d string) map[string]string {
-				return map[string]string{
-					"script.star": `
-# set the foo annotation on each resource
-def run(r, fc):
-  for resource in r:
-    resource["metadata"]["annotations"]["a-string-value"] = fc["data"]["stringValue"]
-    resource["metadata"]["annotations"]["a-int-value"] = fc["data"]["intValue"]
-    resource["metadata"]["annotations"]["a-bool-value"] = fc["data"]["boolValue"]
-run(ctx.resource_list["items"], ctx.resource_list["functionConfig"])
-`,
-					"config.yaml": `
-apiVersion: example.com/v1alpha1
-kind: Input
-metadata:
-  name: foo
-  annotations:
-    config.kubernetes.io/function: |
-      starlark:
-        path: script.star
-        name: fn
-data:
-  boolValue: true
-  intValue: 2
-  stringValue: a
-`,
-					"deployment.yaml": `
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: foo
-`,
-				}
-			},
-			expectedFiles: func(d string) map[string]string {
-				return map[string]string{
-					"config.yaml": `
-apiVersion: example.com/v1alpha1
-kind: Input
-metadata:
-  name: foo
-  annotations:
-    config.kubernetes.io/function: |
-      starlark:
-        path: script.star
-        name: fn
-    a-bool-value: true
-    a-int-value: 2
-    a-string-value: a
-data:
-  boolValue: true
-  intValue: 2
-  stringValue: a
-`,
-					"deployment.yaml": `
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: foo
-  annotations:
-    a-bool-value: true
-    a-int-value: 2
-    a-string-value: a
-`,
-				}
-			},
-		},
-
-		{
-			name: "starlark_function_path",
-			args: func(d string) []string {
-				return []string{
-					"--enable-star", "--star-path", "script.star",
-					"--", "stringValue=a", "intValue=2", "boolValue=true",
-				}
-			},
-			files: func(d string) map[string]string {
-				return map[string]string{
-					"script.star": `
-# set the foo annotation on each resource
-def run(r, fc):
-  for resource in r:
-    resource["metadata"]["annotations"]["a-string-value"] = fc["data"]["stringValue"]
-    resource["metadata"]["annotations"]["a-int-value"] = fc["data"]["intValue"]
-    resource["metadata"]["annotations"]["a-bool-value"] = fc["data"]["boolValue"]
-run(ctx.resource_list["items"], ctx.resource_list["functionConfig"])
-`,
-					"deployment.yaml": `
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: foo
-`,
-				}
-			},
-			expectedFiles: func(d string) map[string]string {
-				return map[string]string{
-					"deployment.yaml": `
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: foo
-  annotations:
-    a-bool-value: true
-    a-int-value: 2
-    a-string-value: a
-`,
-				}
-			},
-		},
-
-		{
-			name: "starlark_function_url",
-			args: func(d string) []string {
-				return []string{
-					"--enable-star", "--star-url", "https://storage.googleapis.com/kustomize-starlark-functions/annotate.star",
-					"--star-name", "annotate",
-					"--", "stringValue=a", "intValue=2", "boolValue=true",
-				}
-			},
-			files: func(d string) map[string]string {
-				return map[string]string{
-					"deployment.yaml": `
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: foo
-`,
-				}
-			},
-			expectedFiles: func(d string) map[string]string {
-				return map[string]string{
-					"deployment.yaml": `
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: foo
-  annotations:
-    a-bool-value: true
-    a-int-value: 2
-    a-string-value: a
-`,
-				}
-			},
-		},
-
-		{
-			name: "starlark_function_url_config",
-			args: func(d string) []string {
-				return []string{"--enable-star"}
-			},
-			files: func(d string) map[string]string {
-				return map[string]string{
-					"config.yaml": `
-apiVersion: example.com/v1alpha1
-kind: Input
-metadata:
-  name: foo
-  annotations:
-    a-bool-value: true
-    a-int-value: 2
-    a-string-value: a
-    config.kubernetes.io/function: |
-      starlark:
-        url: https://storage.googleapis.com/kustomize-starlark-functions/annotate.star
-        name: fn
-data:
-  boolValue: true
-  intValue: 2
-  stringValue: a
-`,
-					"deployment.yaml": `
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: foo
-`,
-				}
-			},
-			expectedFiles: func(d string) map[string]string {
-				return map[string]string{
-					"deployment.yaml": `
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: foo
-  annotations:
-    a-bool-value: true
-    a-int-value: 2
-    a-string-value: a
-`,
-				}
-			},
-		},
 	}
 
 	// TODO: dedup this with the shared version
@@ -706,7 +507,7 @@ metadata:
 				t.Skip()
 			}
 
-			dir, err := ioutil.TempDir("", "kustomize-test-data-")
+			dir, err := os.MkdirTemp("", "kustomize-test-data-")
 			if !assert.NoError(t, err) {
 				t.FailNow()
 			}
@@ -715,12 +516,12 @@ metadata:
 
 			// write the input
 			for path, data := range tt.files(binDir) {
-				err := ioutil.WriteFile(path, []byte(data), 0600)
+				err := os.WriteFile(path, []byte(data), 0600)
 				testutil.AssertNoError(t, err)
 			}
 
 			args := append([]string{"fn", "run", "."}, tt.args(binDir)...)
-			cmd := exec.Command(filepath.Join(binDir, kyamlBin), args...)
+			cmd := exec.Command(filepath.Join(binDir, kyamlBin), args...) //nolint: gosec
 			cmd.Dir = dir
 			var stdErr, stdOut bytes.Buffer
 			cmd.Stdout = &stdOut
@@ -737,7 +538,7 @@ metadata:
 			testutil.AssertNoError(t, err, stdErr.String())
 
 			for path, data := range tt.expectedFiles(binDir) {
-				b, err := ioutil.ReadFile(path)
+				b, err := os.ReadFile(path)
 				testutil.AssertNoError(t, err, stdErr.String())
 
 				if !assert.Equal(t, strings.TrimSpace(data), strings.TrimSpace(string(b)), stdErr.String()) {
@@ -751,16 +552,18 @@ metadata:
 var buildOnce sync.Once
 var binDir string
 
+const e2eConfigDir = "e2econtainerconfig"
+
 func build() string {
 	// only build the binaries once
 	buildOnce.Do(func() {
 		var err error
-		binDir, err = ioutil.TempDir("", "kustomize-test-")
+		binDir, err = os.MkdirTemp("", "kustomize-test-")
 		if err != nil {
 			panic(err)
 		}
 
-		build := exec.Command("go", "build", "-o",
+		build := exec.Command("go", "build", "-o", //nolint: gosec
 			filepath.Join(binDir, e2econtainerconfigBin))
 		build.Dir = "e2econtainerconfig"
 		build.Stdout = os.Stdout
@@ -772,7 +575,7 @@ func build() string {
 			panic(err)
 		}
 
-		build = exec.Command("go", "build", "-o", filepath.Join(binDir, kyamlBin))
+		build = exec.Command("go", "build", "-o", filepath.Join(binDir, kyamlBin)) //nolint: gosec
 		build.Dir = filepath.Join("..", "..", "..", "kubectl-krm")
 		build.Stdout = os.Stdout
 		build.Stderr = os.Stderr
@@ -784,9 +587,11 @@ func build() string {
 		if os.Getenv("KUSTOMIZE_DOCKER_E2E") == "false" {
 			return
 		}
-		build = exec.Command(
-			"docker", "build", ".", "-t", "gcr.io/kustomize-functions/e2econtainerconfig")
-		build.Dir = "e2econtainerconfig"
+		build = exec.Command("docker", "build", ".",
+			"-f", "./cmd/config/internal/commands/e2e/e2econtainerconfig/Dockerfile",
+			"-t", "gcr.io/kustomize-functions/e2econtainerconfig",
+		)
+		build.Dir = "../../../../../" // Repo root
 		build.Stdout = os.Stdout
 		build.Stderr = os.Stderr
 		err = build.Run()
@@ -803,9 +608,9 @@ var (
 	kyamlBin              string
 )
 
-func init() {
+func init() { //nolint: gochecknoinits
 	kyamlBin = "kubectl-krm"
-	e2econtainerconfigBin = "e2econtainerconfig"
+	e2econtainerconfigBin = e2eConfigDir
 
 	if runtime.GOOS == "windows" {
 		kyamlBin = "kubectl-krm.exe"

@@ -1,29 +1,22 @@
-.PHONY: statik test all clean generate run
+.PHONY: test all clean generate run
 
 FUNC_WRAPPER_SRC_DIR = funcwrappersrc
 FUNC_WRAPPER_DST_DIR = funcwrapper
 
+include ../../Makefile-modules.mk
+
 all: test build
 
-statik:
-	go get github.com/rakyll/statik
+test:
+	go test -v ./...
 
-test: generate
-	go test ./...
+build:
+	go build -o $(MYGOBIN) main.go
 
-generate: statik
-	( \
-		cd internal/krmfunction; \
-		statik -src=$(FUNC_WRAPPER_SRC_DIR) -f -p $(FUNC_WRAPPER_DST_DIR) -include=main.go,go.mod.src \
-	)
-
-build: generate
-	go build -o pluginator main.go
-
-install: generate
+install:
 	go install .
 
-run: generate
+run:
 	go run . $(ARGS)
 
 clean:

@@ -1,6 +1,5 @@
 // Copyright 2019 The Kubernetes Authors.
 // SPDX-License-Identifier: Apache-2.0
-//
 package commands
 
 import (
@@ -55,6 +54,9 @@ type GrepRunner struct {
 }
 
 func (r *GrepRunner) preRunE(c *cobra.Command, args []string) error {
+	if len(args) == 0 {
+		return fmt.Errorf("missing required argument: QUERY")
+	}
 	r.GrepFilter.Compare = func(a, b string) (int, error) {
 		qa, err := resource.ParseQuantity(a)
 		if err != nil {
@@ -73,19 +75,20 @@ func (r *GrepRunner) preRunE(c *cobra.Command, args []string) error {
 	}
 
 	var last []string
-	if strings.Contains(parts[len(parts)-1], ">=") {
+	switch {
+	case strings.Contains(parts[len(parts)-1], ">="):
 		last = strings.Split(parts[len(parts)-1], ">=")
 		r.MatchType = filters.GreaterThanEq
-	} else if strings.Contains(parts[len(parts)-1], "<=") {
+	case strings.Contains(parts[len(parts)-1], "<="):
 		last = strings.Split(parts[len(parts)-1], "<=")
 		r.MatchType = filters.LessThanEq
-	} else if strings.Contains(parts[len(parts)-1], ">") {
+	case strings.Contains(parts[len(parts)-1], ">"):
 		last = strings.Split(parts[len(parts)-1], ">")
 		r.MatchType = filters.GreaterThan
-	} else if strings.Contains(parts[len(parts)-1], "<") {
+	case strings.Contains(parts[len(parts)-1], "<"):
 		last = strings.Split(parts[len(parts)-1], "<")
 		r.MatchType = filters.LessThan
-	} else {
+	default:
 		last = strings.Split(parts[len(parts)-1], "=")
 		r.MatchType = filters.Regexp
 	}
@@ -99,7 +102,7 @@ func (r *GrepRunner) preRunE(c *cobra.Command, args []string) error {
 		r.Value = last[1]
 	}
 
-	r.Path = append(parts[:len(parts)-1], last[0])
+	r.Path = append(parts[:len(parts)-1], last[0]) //nolint:gocritic
 	return nil
 }
 
@@ -136,7 +139,6 @@ func (r *GrepRunner) runE(c *cobra.Command, args []string) error {
 	fmt.Fprintf(c.OutOrStdout(), "%s", res)
 
 	return nil
-
 }
 
 func (r *GrepRunner) ExecuteCmd(w io.Writer, pkgPath string) error {

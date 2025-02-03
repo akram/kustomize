@@ -6,13 +6,13 @@ package filters_test
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/kustomize/kyaml/kio"
 	. "sigs.k8s.io/kustomize/kyaml/kio/filters"
 	"sigs.k8s.io/kustomize/kyaml/kio/filters/testyaml"
@@ -82,7 +82,7 @@ spec:
 		}},
 		Outputs: []kio.Writer{kio.ByteWriter{Writer: buff}},
 	}.Execute()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, expected, buff.String())
 }
 
@@ -147,7 +147,7 @@ spec:
 		Filters: []kio.Filter{FormatFilter{}},
 		Outputs: []kio.Writer{kio.ByteWriter{Writer: buff}},
 	}.Execute()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, expected, buff.String())
 }
 
@@ -201,7 +201,7 @@ spec:
 			}}},
 		Outputs: []kio.Writer{kio.ByteWriter{Writer: buff}},
 	}.Execute()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, expected, buff.String())
 
 	y = `
@@ -269,7 +269,7 @@ spec:
 			}}},
 		Outputs: []kio.Writer{kio.ByteWriter{Writer: buff}},
 	}.Execute()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, expected, buff.String())
 }
 
@@ -298,7 +298,7 @@ spec:
 `
 
 	s, err := FormatInput(strings.NewReader(y))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, expected, s.String())
 }
 
@@ -358,7 +358,7 @@ data:
 `
 
 	s, err := FormatInput(strings.NewReader(y))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, expected, s.String())
 }
 
@@ -424,7 +424,7 @@ spec:
         - containerPort: 80
 `
 	s, err := FormatInput(strings.NewReader(y))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, expected, s.String())
 }
 
@@ -456,7 +456,7 @@ spec:
     targetPort: 9376
 `
 	s, err := FormatInput(strings.NewReader(y))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, expected, s.String())
 }
 
@@ -518,7 +518,7 @@ webhooks:
   timeoutSeconds: 1
 `
 	s, err := FormatInput(strings.NewReader(y))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, expected, s.String())
 }
 
@@ -565,7 +565,7 @@ other:
   b: a1
 `
 	s, err := FormatInput(strings.NewReader(y))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, expected, s.String())
 }
 
@@ -573,34 +573,33 @@ other:
 func TestFormatInput_resources(t *testing.T) {
 	input := &bytes.Buffer{}
 	_, err := io.Copy(input, bytes.NewReader(testyaml.UnformattedYaml1))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	_, err = io.Copy(input, strings.NewReader("---\n"))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	_, err = io.Copy(input, bytes.NewReader(testyaml.UnformattedYaml2))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	_, err = io.Copy(input, strings.NewReader("---\n"))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	_, err = io.Copy(input, bytes.NewReader(testyaml.UnformattedYaml3))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	expectedOutput := &bytes.Buffer{}
 	_, err = io.Copy(expectedOutput, bytes.NewReader(testyaml.FormattedYaml1))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	_, err = io.Copy(expectedOutput, strings.NewReader("---\n"))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	_, err = io.Copy(expectedOutput, bytes.NewReader(testyaml.FormattedYaml2))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	_, err = io.Copy(expectedOutput, strings.NewReader("---\n"))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	_, err = io.Copy(expectedOutput, bytes.NewReader(testyaml.FormattedYaml3))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	s, err := FormatInput(input)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, expectedOutput.String(), s.String())
 }
 
-//
 func TestFormatInput_failMissingKind(t *testing.T) {
 	y := `
 spec:
@@ -622,7 +621,7 @@ apiVersion: example.com/v1beta1
 `
 
 	b, err := FormatInput(strings.NewReader(y))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, strings.TrimLeft(y, "\n"), b.String())
 }
 
@@ -647,7 +646,7 @@ kind: MyKind
 `
 
 	b, err := FormatInput(strings.NewReader(y))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, strings.TrimLeft(y, "\n"), b.String())
 }
 
@@ -680,12 +679,12 @@ apiVersion: example.com/v1beta1
 // with a .yaml extension.
 func TestFormatFileOrDirectory_yamlExtFile(t *testing.T) {
 	// write the unformatted file
-	f, err := ioutil.TempFile("", "yamlfmt*.yaml")
+	f, err := os.CreateTemp("", "yamlfmt*.yaml")
 	if !assert.NoError(t, err) {
 		return
 	}
 	defer os.Remove(f.Name())
-	err = ioutil.WriteFile(f.Name(), testyaml.UnformattedYaml1, 0600)
+	err = os.WriteFile(f.Name(), testyaml.UnformattedYaml1, 0600)
 	if !assert.NoError(t, err) {
 		return
 	}
@@ -697,7 +696,7 @@ func TestFormatFileOrDirectory_yamlExtFile(t *testing.T) {
 	}
 
 	// check the result is formatted
-	b, err := ioutil.ReadFile(f.Name())
+	b, err := os.ReadFile(f.Name())
 	if !assert.NoError(t, err) {
 		return
 	}
@@ -706,20 +705,20 @@ func TestFormatFileOrDirectory_yamlExtFile(t *testing.T) {
 
 func TestFormatFileOrDirectory_multipleYamlEntries(t *testing.T) {
 	// write the unformatted file
-	f, err := ioutil.TempFile("", "yamlfmt*.yaml")
-	assert.NoError(t, err)
+	f, err := os.CreateTemp("", "yamlfmt*.yaml")
+	require.NoError(t, err)
 	defer os.Remove(f.Name())
-	err = ioutil.WriteFile(f.Name(),
+	err = os.WriteFile(f.Name(),
 		[]byte(string(testyaml.UnformattedYaml1)+"---\n"+string(testyaml.UnformattedYaml2)), 0600)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// format the file
 	err = FormatFileOrDirectory(f.Name())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// check the result is formatted
-	b, err := ioutil.ReadFile(f.Name())
-	assert.NoError(t, err)
+	b, err := os.ReadFile(f.Name())
+	require.NoError(t, err)
 	assert.Equal(t, string(testyaml.FormattedYaml1)+"---\n"+string(testyaml.FormattedYaml2), string(b))
 }
 
@@ -727,19 +726,19 @@ func TestFormatFileOrDirectory_multipleYamlEntries(t *testing.T) {
 // with a .yml extension.
 func TestFormatFileOrDirectory_ymlExtFile(t *testing.T) {
 	// write the unformatted file
-	f, err := ioutil.TempFile("", "yamlfmt*.yml")
-	assert.NoError(t, err)
+	f, err := os.CreateTemp("", "yamlfmt*.yml")
+	require.NoError(t, err)
 	defer os.Remove(f.Name())
-	err = ioutil.WriteFile(f.Name(), testyaml.UnformattedYaml1, 0600)
-	assert.NoError(t, err)
+	err = os.WriteFile(f.Name(), testyaml.UnformattedYaml1, 0600)
+	require.NoError(t, err)
 
 	// format the file
 	err = FormatFileOrDirectory(f.Name())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// check the result is formatted
-	b, err := ioutil.ReadFile(f.Name())
-	assert.NoError(t, err)
+	b, err := os.ReadFile(f.Name())
+	require.NoError(t, err)
 	assert.Equal(t, string(testyaml.FormattedYaml1), string(b))
 }
 
@@ -747,19 +746,19 @@ func TestFormatFileOrDirectory_ymlExtFile(t *testing.T) {
 // YAML content is formatted as such.
 func TestFormatFileOrDirectory_YamlExtFileWithJson(t *testing.T) {
 	// write the unformatted JSON file contents
-	f, err := ioutil.TempFile("", "yamlfmt*.yaml")
-	assert.NoError(t, err)
+	f, err := os.CreateTemp("", "yamlfmt*.yaml")
+	require.NoError(t, err)
 	defer os.Remove(f.Name())
-	err = ioutil.WriteFile(f.Name(), testyaml.UnformattedJSON1, 0600)
-	assert.NoError(t, err)
+	err = os.WriteFile(f.Name(), testyaml.UnformattedJSON1, 0600)
+	require.NoError(t, err)
 
 	// format the file
 	err = FormatFileOrDirectory(f.Name())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// check the result is formatted as yaml
-	b, err := ioutil.ReadFile(f.Name())
-	assert.NoError(t, err)
+	b, err := os.ReadFile(f.Name())
+	require.NoError(t, err)
 	assert.Equal(t, string(testyaml.FormattedFlowYAML1), string(b))
 }
 
@@ -767,19 +766,19 @@ func TestFormatFileOrDirectory_YamlExtFileWithJson(t *testing.T) {
 // and JSON contents won't be modified.
 func TestFormatFileOrDirectory_JsonExtFileWithNotModified(t *testing.T) {
 	// write the unformatted JSON file contents
-	f, err := ioutil.TempFile("", "yamlfmt*.json")
-	assert.NoError(t, err)
+	f, err := os.CreateTemp("", "yamlfmt*.json")
+	require.NoError(t, err)
 	defer os.Remove(f.Name())
-	err = ioutil.WriteFile(f.Name(), testyaml.UnformattedJSON1, 0600)
-	assert.NoError(t, err)
+	err = os.WriteFile(f.Name(), testyaml.UnformattedJSON1, 0600)
+	require.NoError(t, err)
 
 	// format the file
 	err = FormatFileOrDirectory(f.Name())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// check the result is formatted as yaml
-	b, err := ioutil.ReadFile(f.Name())
-	assert.NoError(t, err)
+	b, err := os.ReadFile(f.Name())
+	require.NoError(t, err)
 	assert.Equal(t, string(testyaml.UnformattedJSON1), string(b))
 }
 
@@ -787,10 +786,10 @@ func TestFormatFileOrDirectory_JsonExtFileWithNotModified(t *testing.T) {
 // Kubernetes and non-Kubernetes documents, it will only format the Kubernetes documents
 func TestFormatFileOrDirectory_partialKubernetesYamlFile(t *testing.T) {
 	// write the unformatted file
-	f, err := ioutil.TempFile("", "yamlfmt*.yaml")
-	assert.NoError(t, err)
+	f, err := os.CreateTemp("", "yamlfmt*.yaml")
+	require.NoError(t, err)
 	defer os.Remove(f.Name())
-	err = ioutil.WriteFile(f.Name(), []byte(string(testyaml.UnformattedYaml1)+`---
+	err = os.WriteFile(f.Name(), []byte(string(testyaml.UnformattedYaml1)+`---
 status:
   conditions:
   - 3
@@ -799,15 +798,15 @@ status:
 spec: a
 ---
 `+string(testyaml.UnformattedYaml2)), 0600)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// format the file
 	err = FormatFileOrDirectory(f.Name())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// check the result is  NOT formatted
-	b, err := ioutil.ReadFile(f.Name())
-	assert.NoError(t, err)
+	b, err := os.ReadFile(f.Name())
+	require.NoError(t, err)
 	assert.Equal(t, string(testyaml.FormattedYaml1)+`---
 status:
   conditions:
@@ -823,10 +822,10 @@ spec: a
 // kubernetes
 func TestFormatFileOrDirectory_skipNonKubernetesYamlFile(t *testing.T) {
 	// write the unformatted JSON file contents
-	f, err := ioutil.TempFile("", "yamlfmt*.yaml")
-	assert.NoError(t, err)
+	f, err := os.CreateTemp("", "yamlfmt*.yaml")
+	require.NoError(t, err)
 	defer os.Remove(f.Name())
-	err = ioutil.WriteFile(f.Name(), []byte(`
+	err = os.WriteFile(f.Name(), []byte(`
 status:
   conditions:
   - 3
@@ -834,15 +833,15 @@ status:
   - 2
 spec: a
 `), 0600)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// format the file
 	err = FormatFileOrDirectory(f.Name())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// check the result is formatted as yaml
-	b, err := ioutil.ReadFile(f.Name())
-	assert.NoError(t, err)
+	b, err := os.ReadFile(f.Name())
+	require.NoError(t, err)
 	assert.Equal(t, `status:
   conditions:
   - 3
@@ -854,17 +853,17 @@ spec: a
 
 // TestFormatFileOrDirectory_jsonFile should not fmt the file even though it contains yaml.
 func TestFormatFileOrDirectory_skipJsonExtFile(t *testing.T) {
-	f, err := ioutil.TempFile("", "yamlfmt*.json")
-	assert.NoError(t, err)
+	f, err := os.CreateTemp("", "yamlfmt*.json")
+	require.NoError(t, err)
 	defer os.Remove(f.Name())
-	err = ioutil.WriteFile(f.Name(), testyaml.UnformattedYaml1, 0600)
-	assert.NoError(t, err)
+	err = os.WriteFile(f.Name(), testyaml.UnformattedYaml1, 0600)
+	require.NoError(t, err)
 
 	err = FormatFileOrDirectory(f.Name())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	b, err := ioutil.ReadFile(f.Name())
-	assert.NoError(t, err)
+	b, err := os.ReadFile(f.Name())
+	require.NoError(t, err)
 
 	assert.Equal(t, string(testyaml.UnformattedYaml1), string(b))
 }
@@ -872,64 +871,62 @@ func TestFormatFileOrDirectory_skipJsonExtFile(t *testing.T) {
 // TestFormatFileOrDirectory_directory verifies that yaml files will be formatted,
 // and other files will be ignored
 func TestFormatFileOrDirectory_directory(t *testing.T) {
-	d, err := ioutil.TempDir("", "yamlfmt")
-	assert.NoError(t, err)
-	defer os.RemoveAll(d)
+	d := t.TempDir()
 
-	err = os.Mkdir(filepath.Join(d, "config"), 0700)
-	assert.NoError(t, err)
+	err := os.Mkdir(filepath.Join(d, "config"), 0700)
+	require.NoError(t, err)
 
-	err = ioutil.WriteFile(filepath.Join(d, "c1.yaml"), testyaml.UnformattedYaml1, 0600)
-	assert.NoError(t, err)
+	err = os.WriteFile(filepath.Join(d, "c1.yaml"), testyaml.UnformattedYaml1, 0600)
+	require.NoError(t, err)
 
-	err = ioutil.WriteFile(filepath.Join(d, "config", "c2.yaml"), testyaml.UnformattedYaml2, 0600)
-	assert.NoError(t, err)
+	err = os.WriteFile(filepath.Join(d, "config", "c2.yaml"), testyaml.UnformattedYaml2, 0600)
+	require.NoError(t, err)
 
-	err = ioutil.WriteFile(filepath.Join(d, "README.md"), []byte(`# Markdown`), 0600)
-	assert.NoError(t, err)
+	err = os.WriteFile(filepath.Join(d, "README.md"), []byte(`# Markdown`), 0600)
+	require.NoError(t, err)
 
 	err = FormatFileOrDirectory(d)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	b, err := ioutil.ReadFile(filepath.Join(d, "c1.yaml"))
-	assert.NoError(t, err)
+	b, err := os.ReadFile(filepath.Join(d, "c1.yaml"))
+	require.NoError(t, err)
 	assert.Equal(t, string(testyaml.FormattedYaml1), string(b))
 
-	b, err = ioutil.ReadFile(filepath.Join(d, "config", "c2.yaml"))
-	assert.NoError(t, err)
+	b, err = os.ReadFile(filepath.Join(d, "config", "c2.yaml"))
+	require.NoError(t, err)
 	assert.Equal(t, string(testyaml.FormattedYaml2), string(b))
 
-	b, err = ioutil.ReadFile(filepath.Join(d, "README.md"))
-	assert.NoError(t, err)
+	b, err = os.ReadFile(filepath.Join(d, "README.md"))
+	require.NoError(t, err)
 	assert.Equal(t, `# Markdown`, string(b))
 
 	// verify no additional files were created
 	files := []string{
 		".", "c1.yaml", "README.md", "config", filepath.Join("config", "c2.yaml")}
 	err = filepath.Walk(d, func(path string, info os.FileInfo, err error) error {
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		path, err = filepath.Rel(d, path)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Contains(t, files, path)
 		return nil
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 // TestFormatFileOrDirectory_trimWhiteSpace verifies that trailling and leading whitespace is
 // trimmed
 func TestFormatFileOrDirectory_trimWhiteSpace(t *testing.T) {
-	f, err := ioutil.TempFile("", "yamlfmt*.yaml")
-	assert.NoError(t, err)
+	f, err := os.CreateTemp("", "yamlfmt*.yaml")
+	require.NoError(t, err)
 	defer os.Remove(f.Name())
-	err = ioutil.WriteFile(f.Name(), []byte("\n\n"+string(testyaml.UnformattedYaml1)+"\n\n"), 0600)
-	assert.NoError(t, err)
+	err = os.WriteFile(f.Name(), []byte("\n\n"+string(testyaml.UnformattedYaml1)+"\n\n"), 0600)
+	require.NoError(t, err)
 
 	err = FormatFileOrDirectory(f.Name())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	b, err := ioutil.ReadFile(f.Name())
-	assert.NoError(t, err)
+	b, err := os.ReadFile(f.Name())
+	require.NoError(t, err)
 
 	assert.Equal(t, string(testyaml.FormattedYaml1), string(b))
 }
@@ -1026,22 +1023,22 @@ metadata:
 	for i := range testCases {
 		test := testCases[i]
 		t.Run(test.name, func(t *testing.T) {
-			f, err := ioutil.TempFile("", "yamlfmt*.yaml")
-			assert.NoError(t, err)
+			f, err := os.CreateTemp("", "yamlfmt*.yaml")
+			require.NoError(t, err)
 			defer os.Remove(f.Name())
 
-			err = ioutil.WriteFile(f.Name(), test.input, 0600)
-			assert.NoError(t, err)
+			err = os.WriteFile(f.Name(), test.input, 0600)
+			require.NoError(t, err)
 
 			err = FormatFileOrDirectory(f.Name())
 			if test.expectError {
-				assert.Error(t, err)
+				require.Error(t, err)
 				return
 			}
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
-			b, err := ioutil.ReadFile(f.Name())
-			assert.NoError(t, err)
+			b, err := os.ReadFile(f.Name())
+			require.NoError(t, err)
 
 			assert.Equal(t, strings.TrimSpace(string(test.expectedOutput)),
 				strings.TrimSpace(string(b)))
@@ -1094,6 +1091,6 @@ spec:
 		}},
 		Outputs: []kio.Writer{kio.ByteWriter{Writer: buff}},
 	}.Execute()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, expected, buff.String())
 }

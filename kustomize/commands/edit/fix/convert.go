@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 	"path"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -55,11 +56,11 @@ func filesTouchedByKustomize(k *types.Kustomization, filepath string, fSys files
 		files, err := fSys.ReadDir(r)
 		if err == nil && len(files) > 0 {
 			for _, file := range files {
-				if !stringInSlice(file, []string{
+				if !slices.Contains([]string{
 					"kustomization.yaml",
 					"kustomization.yml",
 					"Kustomization",
-				}) {
+				}, file) {
 					continue
 				}
 
@@ -78,11 +79,9 @@ func filesTouchedByKustomize(k *types.Kustomization, filepath string, fSys files
 				}
 				result = append(result, paths...)
 			}
-
 		}
 		// read the resource as a file
 		result = append(result, path.Join(filepath, r))
-
 	}
 
 	// aggregate all of the paths from the `patches` field
@@ -136,7 +135,7 @@ func getNodesFromFile(fileName string, fSys filesys.FileSystem) ([]*kyaml.RNode,
 	}
 	out := &bytes.Buffer{}
 	r := kio.ByteReadWriter{
-		Reader:                bytes.NewBufferString(string(b)),
+		Reader:                bytes.NewBuffer(b),
 		Writer:                out,
 		KeepReaderAnnotations: true,
 		OmitReaderAnnotations: true,
@@ -149,7 +148,6 @@ func findVarName(node *kyaml.RNode, varName string, path []string) ([]string, []
 	var options []*types.FieldOptions
 
 	switch node.YNode().Kind {
-
 	case kyaml.SequenceNode:
 		elements, err := node.Elements()
 		if err != nil {
@@ -226,7 +224,7 @@ func constructFieldOptions(value string, varString string) ([]*types.FieldOption
 			return nil, fmt.Errorf("cannot convert all vars to replacements; %s is not delimited", varString)
 		}
 		delimiter = pre
-		index = indexOf(varString, strings.Split(value, delimiter))
+		index = slices.Index(strings.Split(value, delimiter), varString)
 		if index == -1 {
 			// this should never happen
 			return nil, fmt.Errorf("internal error: could not get index of var %s", varString)
@@ -237,7 +235,6 @@ func constructFieldOptions(value string, varString string) ([]*types.FieldOption
 
 func constructTargets(file string, node *kyaml.RNode, fieldPaths []string,
 	options []*types.FieldOptions) ([]*types.TargetSelector, error) {
-
 	if len(fieldPaths) != len(options) {
 		// this should never happen
 		return nil, fmt.Errorf("internal error: length of fieldPaths != length of fieldOptions")
@@ -287,9 +284,12 @@ func constructTargets(file string, node *kyaml.RNode, fieldPaths []string,
 // resources may have different IDs than the patch
 func writePatchTargets(patch types.Patch, node *kyaml.RNode, fieldPaths []string,
 	options []*types.FieldOptions) ([]*types.TargetSelector, error) {
-
 	var result []*types.TargetSelector
-	selector := patch.Target.Copy()
+
+	selector := types.Selector{}
+	if patch.Target != nil {
+		selector = patch.Target.Copy()
+	}
 
 	for i := range fieldPaths {
 		target := &types.TargetSelector{
@@ -327,22 +327,4 @@ func setPlaceholderValue(varName string, files []string, fSys filesys.FileSystem
 		}
 	}
 	return nil
-}
-
-func stringInSlice(elem string, slice []string) bool {
-	for i := range slice {
-		if slice[i] == elem {
-			return true
-		}
-	}
-	return false
-}
-
-func indexOf(varName string, slice []string) int {
-	for i := range slice {
-		if slice[i] == varName {
-			return i
-		}
-	}
-	return -1
 }

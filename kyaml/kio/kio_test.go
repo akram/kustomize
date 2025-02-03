@@ -11,6 +11,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/kustomize/kyaml/kio/kioutil"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
 
@@ -91,8 +92,7 @@ func TestEmptyInput(t *testing.T) {
 		Outputs: []Writer{output},
 	}
 
-	err := p.Execute()
-	if err != nil {
+	if err := p.Execute(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -132,8 +132,7 @@ func TestEmptyInputWithFilter(t *testing.T) {
 		Filters: filters,
 	}
 
-	err := p.Execute()
-	if err != nil {
+	if err := p.Execute(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -877,13 +876,12 @@ data:
 
 			err := p.Execute()
 			if tc.expectedErr == "" {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tc.expected, out.String())
 			} else {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Equal(t, tc.expectedErr, err.Error())
 			}
-
 		})
 	}
 }

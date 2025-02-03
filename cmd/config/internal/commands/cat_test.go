@@ -5,28 +5,25 @@ package commands_test
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/kustomize/cmd/config/internal/commands"
 	"sigs.k8s.io/kustomize/kyaml/copyutil"
+	"sigs.k8s.io/kustomize/kyaml/filesys"
 	"sigs.k8s.io/kustomize/kyaml/openapi"
 )
 
 // TODO(pwittrock): write tests for reading / writing ResourceLists
 
 func TestCmd_files(t *testing.T) {
-	d, err := ioutil.TempDir("", "kustomize-cat-test")
-	if !assert.NoError(t, err) {
-		return
-	}
-	defer os.RemoveAll(d)
+	d := t.TempDir()
 
-	err = ioutil.WriteFile(filepath.Join(d, "f1.yaml"), []byte(`
+	err := os.WriteFile(filepath.Join(d, "f1.yaml"), []byte(`
 kind: Deployment
 metadata:
   labels:
@@ -49,7 +46,7 @@ spec:
 	if !assert.NoError(t, err) {
 		return
 	}
-	err = ioutil.WriteFile(filepath.Join(d, "f2.yaml"), []byte(`
+	err = os.WriteFile(filepath.Join(d, "f2.yaml"), []byte(`
 apiVersion: v1
 kind: Abstraction
 metadata:
@@ -121,13 +118,9 @@ spec:
 }
 
 func TestCmd_filesWithReconcilers(t *testing.T) {
-	d, err := ioutil.TempDir("", "kustomize-cat-test")
-	if !assert.NoError(t, err) {
-		return
-	}
-	defer os.RemoveAll(d)
+	d := t.TempDir()
 
-	err = ioutil.WriteFile(filepath.Join(d, "f1.yaml"), []byte(`
+	err := os.WriteFile(filepath.Join(d, "f1.yaml"), []byte(`
 kind: Deployment
 metadata:
   labels:
@@ -150,7 +143,7 @@ spec:
 	if !assert.NoError(t, err) {
 		return
 	}
-	err = ioutil.WriteFile(filepath.Join(d, "f2.yaml"), []byte(`
+	err = os.WriteFile(filepath.Join(d, "f2.yaml"), []byte(`
 apiVersion: v1
 kind: Abstraction
 metadata:
@@ -231,13 +224,9 @@ spec:
 }
 
 func TestCmd_filesWithoutNonReconcilers(t *testing.T) {
-	d, err := ioutil.TempDir("", "kustomize-cat-test")
-	if !assert.NoError(t, err) {
-		return
-	}
-	defer os.RemoveAll(d)
+	d := t.TempDir()
 
-	err = ioutil.WriteFile(filepath.Join(d, "f1.yaml"), []byte(`
+	err := os.WriteFile(filepath.Join(d, "f1.yaml"), []byte(`
 kind: Deployment
 metadata:
   labels:
@@ -260,7 +249,7 @@ spec:
 	if !assert.NoError(t, err) {
 		return
 	}
-	err = ioutil.WriteFile(filepath.Join(d, "f2.yaml"), []byte(`
+	err = os.WriteFile(filepath.Join(d, "f2.yaml"), []byte(`
 apiVersion: v1
 kind: Abstraction
 metadata:
@@ -313,13 +302,9 @@ spec:
 }
 
 func TestCmd_outputTruncateFile(t *testing.T) {
-	d, err := ioutil.TempDir("", "kustomize-cat-test")
-	if !assert.NoError(t, err) {
-		return
-	}
-	defer os.RemoveAll(d)
+	d := t.TempDir()
 
-	err = ioutil.WriteFile(filepath.Join(d, "f1.yaml"), []byte(`
+	err := os.WriteFile(filepath.Join(d, "f1.yaml"), []byte(`
 kind: Deployment
 metadata:
   labels:
@@ -342,7 +327,7 @@ spec:
 	if !assert.NoError(t, err) {
 		return
 	}
-	err = ioutil.WriteFile(filepath.Join(d, "f2.yaml"), []byte(`
+	err = os.WriteFile(filepath.Join(d, "f2.yaml"), []byte(`
 apiVersion: v1
 kind: Abstraction
 metadata:
@@ -369,7 +354,7 @@ spec:
 		return
 	}
 
-	f, err := ioutil.TempFile("", "kustomize-cat-test-dest")
+	f, err := os.CreateTemp("", "kustomize-cat-test-dest")
 	if !assert.NoError(t, err) {
 		return
 	}
@@ -388,7 +373,7 @@ spec:
 		return
 	}
 
-	actual, err := ioutil.ReadFile(f.Name())
+	actual, err := os.ReadFile(f.Name())
 	if !assert.NoError(t, err) {
 		return
 	}
@@ -427,13 +412,9 @@ spec:
 }
 
 func TestCmd_outputCreateFile(t *testing.T) {
-	d, err := ioutil.TempDir("", "kustomize-cat-test")
-	if !assert.NoError(t, err) {
-		return
-	}
-	defer os.RemoveAll(d)
+	d := t.TempDir()
 
-	err = ioutil.WriteFile(filepath.Join(d, "f1.yaml"), []byte(`
+	err := os.WriteFile(filepath.Join(d, "f1.yaml"), []byte(`
 kind: Deployment
 metadata:
   labels:
@@ -456,7 +437,7 @@ spec:
 	if !assert.NoError(t, err) {
 		return
 	}
-	err = ioutil.WriteFile(filepath.Join(d, "f2.yaml"), []byte(`
+	err = os.WriteFile(filepath.Join(d, "f2.yaml"), []byte(`
 apiVersion: v1
 kind: Abstraction
 metadata:
@@ -483,11 +464,7 @@ spec:
 		return
 	}
 
-	d2, err := ioutil.TempDir("", "kustomize-cat-test-dest")
-	if !assert.NoError(t, err) {
-		return
-	}
-	defer os.RemoveAll(d2)
+	d2 := t.TempDir()
 	f := filepath.Join(d2, "output.yaml")
 
 	// fmt the files
@@ -503,7 +480,7 @@ spec:
 		return
 	}
 
-	actual, err := ioutil.ReadFile(f)
+	actual, err := os.ReadFile(f)
 	if !assert.NoError(t, err) {
 		return
 	}
@@ -638,28 +615,24 @@ spec:
 			openapi.ResetOpenAPI()
 			defer openapi.ResetOpenAPI()
 			sourceDir := filepath.Join("test", "testdata", test.dataset)
-			baseDir, err := ioutil.TempDir("", "")
-			if !assert.NoError(t, err) {
-				t.FailNow()
-			}
-			copyutil.CopyDir(sourceDir, baseDir)
-			defer os.RemoveAll(baseDir)
+			baseDir := t.TempDir()
+			require.NoError(t, copyutil.CopyDir(filesys.MakeFsOnDisk(), sourceDir, baseDir))
 			runner := commands.GetCatRunner("")
 			actual := &bytes.Buffer{}
 			runner.Command.SetOut(actual)
 			runner.Command.SetArgs(append([]string{filepath.Join(baseDir, test.packagePath)}, test.args...))
-			err = runner.Command.Execute()
+			err := runner.Command.Execute()
 			if !assert.NoError(t, err) {
 				t.FailNow()
 			}
 
 			// normalize path format for windows
-			actualNormalized := strings.Replace(
-				strings.Replace(actual.String(), "\\", "/", -1),
-				"//", "/", -1)
+			actualNormalized := strings.ReplaceAll(
+				strings.ReplaceAll(actual.String(), "\\", "/"),
+				"//", "/")
 
-			expected := strings.Replace(test.expected, "${baseDir}", baseDir, -1)
-			expectedNormalized := strings.Replace(expected, "\\", "/", -1)
+			expected := strings.ReplaceAll(test.expected, "${baseDir}", baseDir)
+			expectedNormalized := strings.ReplaceAll(expected, "\\", "/")
 			if !assert.Equal(t, expectedNormalized, actualNormalized) {
 				t.FailNow()
 			}

@@ -15,12 +15,18 @@ func NewCmdRemove(
 	v ifc.Validator) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "remove",
-		Short: "Removes items from the kustomization file.",
+		Short: "Removes items from the kustomization file",
 		Long:  "",
 		Example: `
 	# Removes resources from the kustomization file
 	kustomize edit remove resource {filepath} {filepath}
 	kustomize edit remove resource {pattern}
+
+	# Removes one or more configmap from the kustomization file
+	kustomize edit remove configmap {name1},{name2}
+
+	# Removes one or more secret from the kustomization file
+	kustomize edit remove secret {name1},{name2}
 
 	# Removes one or more patches from the kustomization file
 	kustomize edit remove patch --path {filepath} --group {target group name} --version {target version}
@@ -37,6 +43,8 @@ func NewCmdRemove(
 		Args: cobra.MinimumNArgs(1),
 	}
 	c.AddCommand(
+		newCmdRemoveConfigMap(fSys),
+		newCmdRemoveSecret(fSys),
 		newCmdRemoveResource(fSys),
 		newCmdRemoveLabel(fSys, v.MakeLabelNameValidator()),
 		newCmdRemoveAnnotation(fSys, v.MakeAnnotationNameValidator()),

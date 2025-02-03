@@ -4,7 +4,7 @@
 package kio
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -42,15 +42,14 @@ func TestIgnoreFilesMatcher_readIgnoreFile(t *testing.T) {
 		// onDisk creates a temp directory and returns a nil FileSystem, testing
 		// the normal conditions under which ignoreFileMatcher is used.
 		"onDisk": func(writeIgnoreFile bool) (string, filesys.FileSystem) {
-			dir, err := ioutil.TempDir("", "kyaml-test")
-			require.NoError(t, err)
+			dir := t.TempDir()
 
 			if writeIgnoreFile {
 				ignoreFilePath := filepath.Join(dir, ignoreFileName)
-				require.NoError(t, ioutil.WriteFile(ignoreFilePath, []byte(ignoreFileBody), 0600))
+				require.NoError(t, os.WriteFile(ignoreFilePath, []byte(ignoreFileBody), 0600))
 			}
 			testFilePath := filepath.Join(dir, testFileName)
-			require.NoError(t, ioutil.WriteFile(testFilePath, []byte{}, 0600))
+			require.NoError(t, os.WriteFile(testFilePath, []byte{}, 0600))
 			return dir, nil
 		},
 
@@ -107,10 +106,10 @@ func TestLocalPackageReader_Read_ignoreFile(t *testing.T) {
 				filepath.Join("a", "c"),
 			},
 			files: map[string][]byte{
-				filepath.Join("pkgFile"):               {},
+				"pkgFile":                              {},
 				filepath.Join("a", "b", "a_test.yaml"): readFileA,
 				filepath.Join("a", "c", "c_test.yaml"): readFileB,
-				filepath.Join(".krmignore"): []byte(`
+				".krmignore": []byte(`
 a/c/c_test.yaml
 `,
 				),
@@ -127,10 +126,10 @@ a/c/c_test.yaml
 				filepath.Join("a", "c"),
 			},
 			files: map[string][]byte{
-				filepath.Join("pkgFile"):               {},
+				"pkgFile":                              {},
 				filepath.Join("a", "b", "a_test.yaml"): readFileA,
 				filepath.Join("a", "c", "c_test.yaml"): readFileB,
-				filepath.Join(".krmignore"): []byte(`
+				".krmignore": []byte(`
 a/c
 `,
 				),
@@ -146,10 +145,10 @@ a/c
 				filepath.Join("a", "c"),
 			},
 			files: map[string][]byte{
-				filepath.Join("pkgFile"):               {},
+				"pkgFile":                              {},
 				filepath.Join("a", "c", "a_test.yaml"): readFileA,
 				filepath.Join("a", "c", "c_test.yaml"): readFileB,
-				filepath.Join(".krmignore"): []byte(`
+				".krmignore": []byte(`
 d/e/f.yaml
 `,
 				),
@@ -168,10 +167,10 @@ a_test.yaml
 				filepath.Join("a", "c"),
 			},
 			files: map[string][]byte{
-				filepath.Join("pkgFile"):               {},
+				"pkgFile":                              {},
 				filepath.Join("a", "c", "a_test.yaml"): readFileA,
 				filepath.Join("a", "c", "c_test.yaml"): readFileB,
-				filepath.Join(".krmignore"): []byte(`
+				".krmignore": []byte(`
 a/c/c_test.yaml
 `,
 				),
@@ -187,16 +186,16 @@ a_test.yaml
 		{
 			name: "handles a combination of packages and directories",
 			directories: []string{
-				filepath.Join("a"),
+				"a",
 				filepath.Join("d", "e"),
-				filepath.Join("f"),
+				"f",
 			},
 			files: map[string][]byte{
-				filepath.Join("pkgFile"):                 {},
+				"pkgFile":                                {},
 				filepath.Join("d", "pkgFile"):            {},
 				filepath.Join("d", "e", "pkgFile"):       {},
 				filepath.Join("f", "pkgFile"):            {},
-				filepath.Join("manifest.yaml"):           []byte(`root: root`),
+				"manifest.yaml":                          []byte(`root: root`),
 				filepath.Join("a", "manifest.yaml"):      []byte(`a: a`),
 				filepath.Join("d", "manifest.yaml"):      []byte(`d: d`),
 				filepath.Join("d", "e", "manifest.yaml"): []byte(`e: e`),
@@ -215,14 +214,14 @@ manifest.yaml
 		{
 			name: "ignore file can exclude subpackages",
 			directories: []string{
-				filepath.Join("a"),
+				"a",
 			},
 			files: map[string][]byte{
-				filepath.Join("pkgFile"):            {},
+				"pkgFile":                           {},
 				filepath.Join("a", "pkgFile"):       {},
-				filepath.Join("manifest.yaml"):      []byte(`root: root`),
+				"manifest.yaml":                     []byte(`root: root`),
 				filepath.Join("a", "manifest.yaml"): []byte(`a: a`),
-				filepath.Join(".krmignore"): []byte(`
+				".krmignore": []byte(`
 a
 `),
 			},
@@ -259,7 +258,7 @@ a
 
 			for i, node := range nodes {
 				val, err := node.String()
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				want := strings.ReplaceAll(test.expected[i], "${SEP}", string(filepath.Separator))
 				assert.Equal(t, strings.TrimSpace(want), strings.TrimSpace(val))
 			}

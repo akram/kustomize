@@ -1,8 +1,12 @@
+# Copyright 2022 The Kubernetes Authors.
+# SPDX-License-Identifier: Apache-2.0
+
 FROM alpine:latest
 
 ENV BUILD_HOME=/usr/local/build
 RUN apk update && apk add --no-cache git nodejs npm
-RUN npm install -g typescript
+COPY ["./package.json", "./package-lock.json", "./"]
+RUN npm install -g
 
 RUN mkdir -p $BUILD_HOME
 

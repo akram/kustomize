@@ -1,9 +1,12 @@
+// Copyright 2022 The Kubernetes Authors.
+// SPDX-License-Identifier: Apache-2.0
+
 package krusty_test
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	kusttest_test "sigs.k8s.io/kustomize/api/testutils/kusttest"
 )
 
@@ -206,7 +209,7 @@ spec:
       - image: whatever
 `)
 	err := th.RunWithErr("gcp", th.MakeDefaultOptions())
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 // Test for issue #3228

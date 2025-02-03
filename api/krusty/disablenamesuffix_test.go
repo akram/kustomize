@@ -26,8 +26,6 @@ func findSecret(m resmap.ResMap, prefix string) *resource.Resource {
 func TestDisableNameSuffixHash(t *testing.T) {
 	th := kusttest_test.MakeHarness(t)
 	const kustomizationContent = `
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
 namePrefix: foo-
 nameSuffix: -bar
 namespace: ns1
@@ -82,29 +80,25 @@ metadata:
 	secret := findSecret(m, "")
 	if secret == nil {
 		t.Errorf("Expected to find a Secret")
-	}
-	if secret.GetName() != "foo-secret-bar-82c2g5f8f6" {
+	} else if secret.GetName() != "foo-secret-bar-82c2g5f8f6" {
 		t.Errorf("unexpected secret resource name: %s", secret.GetName())
 	}
 
 	th.WriteK("/whatever",
-		strings.Replace(kustomizationContent,
+		strings.ReplaceAll(kustomizationContent,
 			"disableNameSuffixHash: false",
-			"disableNameSuffixHash: true", -1))
+			"disableNameSuffixHash: true"))
 	m = th.Run("/whatever", th.MakeDefaultOptions())
 	secret = findSecret(m, "")
 	if secret == nil {
 		t.Errorf("Expected to find a Secret")
-	}
-	if secret.GetName() != "foo-secret-bar" { // No hash at end.
+	} else if secret.GetName() != "foo-secret-bar" { // No hash at end.
 		t.Errorf("unexpected secret resource name: %s", secret.GetName())
 	}
 }
 func TestDisableNameSuffixHashPerObject(t *testing.T) {
 	th := kusttest_test.MakeHarness(t)
 	const kustomizationContent = `
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
 generatorOptions:
   disableNameSuffixHash: false
 secretGenerator:
@@ -131,16 +125,14 @@ secretGenerator:
 	secret := findSecret(m, "nohash")
 	if secret == nil {
 		t.Errorf("Expected to find a Secret")
-	}
-	if secret.GetName() != "nohash" {
+	} else if secret.GetName() != "nohash" {
 		t.Errorf("unexpected secret resource name: %s", secret.GetName())
 	}
 
 	secret = findSecret(m, "yeshash")
 	if secret == nil {
 		t.Errorf("Expected to find a Secret")
-	}
-	if secret.GetName() != "yeshash-82c2g5f8f6" {
+	} else if secret.GetName() != "yeshash-82c2g5f8f6" {
 		t.Errorf("unexpected secret resource name: %s", secret.GetName())
 	}
 }
